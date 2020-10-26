@@ -13,44 +13,6 @@
 #define LISTENQ 10
 #define MAXDATASIZE 100
 
-void handle_bind_error(int error_code)
-{
-   switch (error_code)
-   {
-   case EACCES:
-      printf("The requested address is protected, and the current user has inadequate permission to access it.");
-      break;
-   case EADDRINUSE:
-      printf("The specified address is already in use");
-   case EADDRNOTAVAIL:
-      printf("The specified address is not available from the local machine.");
-   default:
-      printf("Unspecified error on bind");
-      break;
-   }
-}
-
-void handle_accept_error(int error_code)
-{
-   switch (error_code)
-   {
-   case EBADF:
-      printf("socket is not a valid file descriptor.\n");
-      break;
-   case ECONNABORTED:
-      printf("The connection to socket has been aborted.\n");
-   case EFAULT:
-      printf("The address parameter is not in a writable part of the user address space.\n");
-   case EINTR:
-      printf("The accept() system call was terminated by a signal.\n");
-   case EINVAL:
-      printf("socket is unwilling to accept connections.\n");
-   default:
-      printf("Error accepting the connection.\n");
-      break;
-   }
-}
-
 int main(int argc, char **argv)
 {
    int listenfd;
@@ -74,7 +36,6 @@ int main(int argc, char **argv)
    if (bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) == -1)
    {
       perror("bind");
-      handle_bind_error(errno);
       exit(1);
    }
 
@@ -96,12 +57,22 @@ int main(int argc, char **argv)
    {
       if ((connfd = accept(listenfd, (struct sockaddr *)NULL, NULL)) == -1)
       {
-         handle_accept_error(errno);
          perror("accept");
          exit(1);
       }
+      else
+      {
+         struct sockaddr_in client_socket_addr;
+         socklen_t addr_len = INET_ADDRSTRLEN;
+         getpeername(connfd, (struct sockaddr *)&client_socket_addr, (socklen_t *)&addr_len);
+         char buffer[INET_ADDRSTRLEN];
+         const char *printable_addr = inet_ntop(client_socket_addr.sin_family, &client_socket_addr.sin_addr,
+                                                buffer, addr_len);
+         printf("IP Address: %s\n", printable_addr);
+         printf("Address len: %d\n", addr_len);
+         printf("Port: %d\n", ntohs(client_socket_addr.sin_port));
+      }
 
-      
       ticks = time(NULL);
 
       snprintf(buf, sizeof(buf), "%.24s\r\n", ctime(&ticks));
