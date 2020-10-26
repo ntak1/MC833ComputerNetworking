@@ -41,6 +41,7 @@ int main(int argc, char **argv)
    bzero(&servaddr, sizeof(servaddr));
    servaddr.sin_family = AF_INET;
    servaddr.sin_port = atoi(argv[2]);
+   // Converts the IP address from printable format to network format
    if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0)
    {
       perror("inet_pton error");
@@ -52,6 +53,18 @@ int main(int argc, char **argv)
       perror("connect error");
       exit(1);
    }
+
+   // Exercise 6
+   // Get and print information about the socket
+   struct sockaddr_in server_socket;
+   int server_socket_length = sizeof(servaddr);
+   getsockname(sockfd, (struct sockaddr *)&server_socket, (socklen_t *)&server_socket_length);
+   char buffer[INET_ADDRSTRLEN];
+   const char *printable_addr = inet_ntop(AF_INET, &server_socket.sin_addr,
+                                          buffer, INET_ADDRSTRLEN);
+
+   printf("IP Address: %s\n", printable_addr);
+   printf("Port: %d\n", server_socket.sin_port);
 
    while ((n = read(sockfd, recvline, MAXLINE)) > 0)
    {

@@ -101,6 +101,7 @@ int main(int argc, char **argv)
          exit(1);
       }
 
+      
       ticks = time(NULL);
 
       snprintf(buf, sizeof(buf), "%.24s\r\n", ctime(&ticks));
