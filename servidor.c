@@ -96,8 +96,8 @@ int main(int argc, char **argv)
    {
       if ((connfd = accept(listenfd, (struct sockaddr *)NULL, NULL)) == -1)
       {
-         perror("accept");
          handle_accept_error(errno);
+         perror("accept");
          exit(1);
       }
 
