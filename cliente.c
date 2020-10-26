@@ -19,15 +19,19 @@ int main(int argc, char **argv)
    char error[MAXLINE + 1];
    struct sockaddr_in servaddr;
 
-   if (argc != 2)
+   // Input validation
+   if (argc != 3)
    {
       strcpy(error, "uso: ");
       strcat(error, argv[0]);
       strcat(error, " <IPaddress>");
+      strcat(error, " <#Porta>");
       perror(error);
       exit(1);
    }
 
+   // Create a socket that will use internet IPV4 and will exchange information using the
+   // reliable SOCK_STREAM (TCP)
    if ((sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
    {
       perror("socket error");
@@ -36,7 +40,7 @@ int main(int argc, char **argv)
 
    bzero(&servaddr, sizeof(servaddr));
    servaddr.sin_family = AF_INET;
-   servaddr.sin_port = htons(13);
+   servaddr.sin_port = htons(atoi(argv[2])); // htons convert multi-byte integer types from host byte order to network byte order
    if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0)
    {
       perror("inet_pton error");
