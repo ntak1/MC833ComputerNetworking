@@ -28,17 +28,20 @@ int main(int argc, char **argv)
       exit(1);
    }
 
+   // Define IP address for IPV4 protocol and port number
    bzero(&servaddr, sizeof(servaddr));
    servaddr.sin_family = AF_INET;
    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-   servaddr.sin_port = 0;
+   servaddr.sin_port = 0; // System chooses the port number
 
+   // Associate the socket with the address defined above
    if (bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) == -1)
    {
       perror("bind");
       exit(1);
    }
 
+   // Get the port number chosen by the system and show on stdout
    struct sockaddr_in curr_addr;
    unsigned long addr_lenght = sizeof(servaddr);
    int status = getsockname(listenfd, (struct sockaddr *)&curr_addr, (socklen_t *)&addr_lenght);
@@ -47,14 +50,19 @@ int main(int argc, char **argv)
       printf("Port: %d\n", curr_addr.sin_port);
    }
 
+   // Indicates that the server is ready to accept incoming connections
+   // Define the queue limit for the number of connections to the socket (LISTEQ)
    if (listen(listenfd, LISTENQ) == -1)
    {
       perror("listen");
       exit(1);
    }
 
+   // Wait for connection requests
    for (;;)
    {
+      // Accept a connection, generating a descriptor for the connection socket
+      // connfd
       if ((connfd = accept(listenfd, (struct sockaddr *)NULL, NULL)) == -1)
       {
          perror("accept");
@@ -62,10 +70,13 @@ int main(int argc, char **argv)
       }
       else
       {
+         // Get information about the socket related to connfc
          struct sockaddr_in client_socket_addr;
          socklen_t addr_len = INET_ADDRSTRLEN;
          getpeername(connfd, (struct sockaddr *)&client_socket_addr, (socklen_t *)&addr_len);
          char buffer[INET_ADDRSTRLEN];
+
+         // Get the printable form of the address
          const char *printable_addr = inet_ntop(client_socket_addr.sin_family, &client_socket_addr.sin_addr,
                                                 buffer, addr_len);
          printf("IP Address: %s\n", printable_addr);
@@ -75,9 +86,11 @@ int main(int argc, char **argv)
 
       ticks = time(NULL);
 
+      // Put the connection time in the buffer and write it to the connection socket
       snprintf(buf, sizeof(buf), "%.24s\r\n", ctime(&ticks));
       write(connfd, buf, strlen(buf));
 
+      // Close the connection
       close(connfd);
    }
    return (0);
