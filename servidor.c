@@ -79,6 +79,8 @@ int main(int argc, char **argv)
          // Get the printable form of the address
          const char *printable_addr = inet_ntop(client_socket_addr.sin_family, &client_socket_addr.sin_addr,
                                                 buffer, addr_len);
+
+         printf("----------------------------\n");
          printf("IP Address: %s\n", printable_addr);
          printf("Address len: %d\n", addr_len);
          printf("Port: %d\n", ntohs(client_socket_addr.sin_port));
@@ -90,6 +92,10 @@ int main(int argc, char **argv)
       // Put the connection time in the buffer and write it to the connection socket
       snprintf(buf, sizeof(buf), "%.24s\r\n", ctime(&ticks));
       write(connfd, buf, strlen(buf));
+
+      // Wait in seconds
+      unsigned int sleep_sec = 3600;
+      sleep(sleep_sec);
 
       // Close the connection
       close(connfd);
