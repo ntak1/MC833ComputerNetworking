@@ -25,7 +25,7 @@ int main(int argc, char **argv)
       strcpy(error, "uso: ");
       strcat(error, argv[0]);
       strcat(error, " <IPaddress>");
-      strcat(error, " <#Porta>");
+      strcat(error, " <#Port>");
       perror(error);
       exit(1);
    }
@@ -40,7 +40,7 @@ int main(int argc, char **argv)
 
    bzero(&servaddr, sizeof(servaddr));
    servaddr.sin_family = AF_INET;
-   servaddr.sin_port = htons(atoi(argv[2]));
+   servaddr.sin_port = ntohs((atoi(argv[2])));
    // Converts the IP address from printable format to network format
    if (inet_pton(AF_INET, argv[1], &servaddr.sin_addr) <= 0)
    {
@@ -64,7 +64,8 @@ int main(int argc, char **argv)
                                           buffer, INET_ADDRSTRLEN);
 
    printf("IP Address: %s\n", printable_addr);
-   printf("Port: %u\n", ntohs(server_socket.sin_port));
+
+   printf("Port: %d\n", server_socket.sin_port);
 
    while ((n = read(sockfd, recvline, MAXLINE)) > 0)
    {
