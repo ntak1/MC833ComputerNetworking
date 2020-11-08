@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "syscalls.h"
 
 #define LISTENQ 10
@@ -20,7 +21,6 @@ int main(int argc, char **argv)
   {
     strcpy(error, "usage: ");
     strcat(error, argv[0]);
-    strcat(error, " <IPaddress>");
     strcat(error, " <#Port>");
     perror(error);
     exit(1);
@@ -29,7 +29,6 @@ int main(int argc, char **argv)
 
   listenfd = Socket(AF_INET, SOCK_STREAM, 0);
 
-  // Define IP address for IPV4 protocol and port number
   bzero(&servaddr, sizeof(servaddr));
   servaddr.sin_family = AF_INET;
   servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -63,7 +62,14 @@ int main(int argc, char **argv)
     unsigned int sleep_sec = 3600;
     sleep(sleep_sec);
 
-    // Close the connection
+    int pid = 0;
+    if ((pid = fork()) == 0)
+    {
+      close(listenfd);
+      printf("Connected\n");
+      close(connfd);
+      exit(0);
+    }
     close(connfd);
   }
   return (0);

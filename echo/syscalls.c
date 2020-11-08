@@ -15,7 +15,7 @@ int Socket(int family, int socket_type, int protocol)
 // Associate the socket with the address defined above
 void Bind(int fd, sockaddr *socket_addr)
 {
-  if (bind(fd, (struct sockaddr *)&socket_addr, sizeof(socket_addr)) == -1)
+  if (bind(fd, socket_addr, sizeof(*socket_addr)) == -1)
   {
     perror("bind");
     exit(1);

@@ -12,7 +12,6 @@
 #include <time.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <unistd.h>
 typedef struct sockaddr sockaddr;
 
 int Socket(int, int, int);
