@@ -22,7 +22,7 @@ int main(int argc, char **argv)
   // Input validation
   if (argc != 3)
   {
-    strcpy(error, "uso: ");
+    strcpy(error, "usage: ");
     strcat(error, argv[0]);
     strcat(error, " <IPaddress>");
     strcat(error, " <#Port>");

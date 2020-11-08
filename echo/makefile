@@ -1,4 +1,4 @@
-all: client.o server
+all: client server
 
 server: server.o syscalls.o
 	gcc -Wall -o server server.o syscalls.o
@@ -9,8 +9,8 @@ server.o: server.c
 syscalls.o: syscalls.c
 	gcc -Wall syscalls.c -o syscalls.o -c
 
-client.o: client.c
-	gcc -Wall client.c -o client.o
+client: client.c
+	gcc -Wall client.c -o client
 
 clean:
 	rm -rf *.o

@@ -1,6 +1,9 @@
 #include "syscalls.h"
 
 // Create a socket IPV4 using TCP protocol
+// int family
+// int type
+// int protocol
 int Socket(int family, int socket_type, int protocol)
 {
   int listenfd = -1;
