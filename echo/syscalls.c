@@ -1,9 +1,6 @@
 #include "syscalls.h"
 
 // Create a socket IPV4 using TCP protocol
-// int family
-// int type
-// int protocol
 int Socket(int family, int socket_type, int protocol)
 {
   int listenfd = -1;
@@ -47,3 +44,12 @@ int Accept(int listenfd, struct sockaddr *__restrict__ address, socklen_t *__res
   }
   return connfd;
 }
+
+ // Used by the client to establish a connection with the server
+ void Connect(int socket_fd, sockaddr *server_addr, int addr_size) {
+    if (connect(socket_fd, server_addr, sizeof(server_addr)) < 0)
+    {
+      perror("connect error");
+      exit(1);
+    }
+ }

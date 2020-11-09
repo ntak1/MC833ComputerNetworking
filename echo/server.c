@@ -50,6 +50,15 @@ int main(int argc, char **argv)
     exit(1);
   }
 
+  // TODO make the file an input for argv
+  FILE *inputfd = NULL;
+  inputfd = fopen("arq01.in", "r");
+  if (inputfd == NULL)
+  {
+    perror("Error opening file");
+    exit(1);
+  }
+
   // Input: args
   validate_input(argc, argv, error);
   strcpy(port_str, argv[1]);
@@ -62,9 +71,11 @@ int main(int argc, char **argv)
     exit(1);
   }
   i = 0;
-  while (fgets(command_line, MAXLINE, stdin) != NULL)
+  while (fgets(command_line, MAXLINE, inputfd) != NULL)
   {
-    strcmp(commands[i], command_line);
+    commands[i] = (char *)malloc(sizeof(char) * MAXLINE);
+    strcpy(commands[i], command_line);
+    printf("%s\n", commands[i]);
     i++;
   }
   if (i == 0)
@@ -85,11 +96,18 @@ int main(int argc, char **argv)
   // Get the port number chosen by the system and show on stdout
   struct sockaddr_in curr_addr;
   unsigned long addr_lenght = sizeof(servaddr);
-  int status = getsockname(listenfd, (struct sockaddr *)&curr_addr, (socklen_t *)&addr_lenght);
+  int status = getsockname(listenfd, (sockaddr *)&curr_addr, (socklen_t *)&addr_lenght);
   if (!status)
   {
-    printf("Port: %u\n", ntohs(curr_addr.sin_port));
+    printf("Server listening on port: %u\n", ntohs(curr_addr.sin_port));
   }
+  else
+  {
+    perror("Error defining server port.");
+    exit(0);
+  }
+  printf("Hello?\n");
+  fflush(stdout);
 
   Listen(listenfd, LISTENQ);
 
@@ -97,7 +115,7 @@ int main(int argc, char **argv)
   int conn_number = -1;
   for (;;)
   {
-    connfd = Accept(listenfd, (struct sockaddr *)NULL, NULL);
+    connfd = Accept(listenfd, (sockaddr *)NULL, NULL);
 
     // For each connection fork
     conn_number++;

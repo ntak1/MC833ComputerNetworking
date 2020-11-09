@@ -14,9 +14,14 @@
 #include <arpa/inet.h>
 typedef struct sockaddr sockaddr;
 
-int Socket(int, int, int);
+int Socket(int socket_family, int socket_type, int protocol);
+
 void Bind(int, struct sockaddr *);
+
 void Listen(int, int);
+
 int Accept(int, struct sockaddr *__restrict__, socklen_t *__restrict__);
+
+void Connect(int socket_fd, sockaddr *__retrict__, int addr_size);
 
 #endif
