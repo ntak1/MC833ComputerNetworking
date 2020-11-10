@@ -75,7 +75,7 @@ int main(int argc, char **argv)
   {
     commands[i] = (char *)malloc(sizeof(char) * MAXLINE);
     strcpy(commands[i], command_line);
-    printf("%s\n", commands[i]);
+    printf("%s", commands[i]);
     i++;
   }
   if (i == 0)
@@ -106,7 +106,7 @@ int main(int argc, char **argv)
     perror("Error defining server port.");
     exit(0);
   }
-  printf("Hello?\n");
+  printf("Waiting connection ...\n");
   fflush(stdout);
 
   Listen(listenfd, LISTENQ);
@@ -123,7 +123,7 @@ int main(int argc, char **argv)
     if ((pid = fork()) == 0)
     {
       close(listenfd);
-      printf("Connected\n");
+      printf("Connected!\n");
 
       // Sends the command to the client
       snprintf(buf, sizeof(buf), "%s", commands[conn_number]);
@@ -141,13 +141,14 @@ int main(int argc, char **argv)
           exit(1);
         }
       }
-      fclose(command_output_fd);
+      // fclose(command_output_fd);
       close(connfd);
       exit(0);
     }
-    fclose(command_output_fd);
+    // fclose(command_output_fd);
     close(connfd);
   }
 
+  fclose(command_output_fd);
   return (0);
 }

@@ -14,6 +14,33 @@ void validate_input(int argc, char **argv, char error[])
   }
 }
 
+void send_command_result(char *command, int sockfd)
+{
+  // Executes the command
+  FILE *outputfd = NULL;
+  outputfd = popen(command, "r");
+  if (outputfd == NULL)
+  {
+    perror("faild to run command");
+    exit(1);
+  }
+  // Writes to the server
+  char line[MAXLINE];
+  char temp[MAXLINE];
+  while (fgets(line, MAXLINE, outputfd) != NULL)
+  {
+    strcpy(temp, line);
+    if (!strcmp(temp, "exit"))
+    {
+      write(sockfd, NULL, 0);
+      exit(0);
+    }
+    // TODO: delete
+    fputs(temp, stdout);
+    write(sockfd, line, strlen(line));
+  }
+}
+
 /* Connect to the server and listen to it's request
  * Execute command
  * Send the result back to the server
@@ -62,42 +89,19 @@ int main(int argc, char **argv)
   while ((n = read(sockfd, recvline, MAXLINE)) > 0)
   {
     recvline[n] = 0;
-
     // TODO: delete the print
+    fputs("[command] ", stdout);
     if (fputs(recvline, stdout) == EOF)
     {
       perror("fputs error");
       exit(1);
     }
-  }
-  if (n < 0)
-  {
-    perror("read error");
-    exit(1);
-  }
 
-  // Executes the command
-  FILE *outputfd = NULL;
-  outputfd = popen(recvline, "r");
-  if (outputfd == NULL)
-  {
-    perror("faild to run command");
-    exit(1);
-  }
-
-  // Writes to the server
-  char line[MAXLINE];
-  char temp[MAXLINE];
-  while (fgets(line, MAXLINE, outputfd) != NULL)
-  {
-    // If exit
-    strcpy(temp, line);
-    if (!strcmp(temp, "exit"))
+    // Send the command result back to the server
+    if (n > 0 && recvline[n - 1] == '\n')
     {
-      write(sockfd, NULL, 0);
-      return 0;
+      send_command_result(recvline, sockfd);
     }
-    write(sockfd, line, strlen(line));
   }
 
   return 0;

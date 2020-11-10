@@ -1,0 +1,13 @@
+README.md
+arq01.in
+client
+client.c
+client.o
+makefile
+server
+server.c
+server.o
+server_output.txt
+syscalls.c
+syscalls.h
+syscalls.o
