@@ -1,3 +1,7 @@
+-----------------------------------------
+Client IP Address: 127.0.0.1
+Client Port: 5000
+-----------------------------------------
 README.md
 arq01.in
 client
@@ -11,3 +15,49 @@ server_output.txt
 syscalls.c
 syscalls.h
 syscalls.o
+
+-----------------------------------------
+
+
+
+-----------------------------------------
+Client IP Address: 127.0.0.1
+Client Port: 5000
+-----------------------------------------
+/Users/naomitkm/Projects/MC833/MC833/echo
+
+-----------------------------------------
+
+
+
+-----------------------------------------
+Client IP Address: 127.0.0.1
+Client Port: 5000
+-----------------------------------------
+README.md
+arq01.in
+client
+client.c
+client.o
+makefile
+server
+server.c
+server.o
+server_output.txt
+syscalls.c
+syscalls.h
+syscalls.o
+
+-----------------------------------------
+
+
+
+-----------------------------------------
+Client IP Address: 127.0.0.1
+Client Port: 5000
+-----------------------------------------
+
+-----------------------------------------
+
+
+

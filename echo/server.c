@@ -8,22 +8,11 @@
 #define MAXCOMMANDS 100
 #define LOCALHOST "127.0.0.1"
 
-void validate_input(int argc, char **argv, char *error)
-{
-  if (argc != 2)
-  {
-    strcpy(error, "usage: ");
-    strcat(error, argv[0]);
-    strcat(error, " <#Port>");
-    perror(error);
-    exit(1);
-  }
-}
+// Pragmas
+void validate_input(int argc, char **argv, char *error);
 
 /* Send commands to the client and waits for the result.
- * Write the result to a file.
- */
-
+ * Write the result to a file. */
 int main(int argc, char **argv)
 {
   // Connection variables
@@ -39,6 +28,7 @@ int main(int argc, char **argv)
   char command_line[MAXLINE];
 
   // Auxiliary variables
+  int num_commands = 0;
   int i = 0;
 
   // Output file (stores the command result)
@@ -78,6 +68,7 @@ int main(int argc, char **argv)
     printf("%s", commands[i]);
     i++;
   }
+  num_commands = i;
   if (i == 0)
   {
     perror("No commands specified.");
@@ -113,7 +104,7 @@ int main(int argc, char **argv)
 
   // Wait for connection requests
   int conn_number = -1;
-  for (;;)
+  while (conn_number < num_commands - 1)
   {
     connfd = Accept(listenfd, (sockaddr *)NULL, NULL);
 
@@ -141,14 +132,29 @@ int main(int argc, char **argv)
           exit(1);
         }
       }
-      // fclose(command_output_fd);
       close(connfd);
       exit(0);
     }
-    // fclose(command_output_fd);
     close(connfd);
   }
 
   fclose(command_output_fd);
   return (0);
+}
+
+// ----------------------------------------------------------------------------
+// Helper functions implementation
+// ----------------------------------------------------------------------------
+
+// Validate the input
+void validate_input(int argc, char **argv, char *error)
+{
+  if (argc != 2)
+  {
+    strcpy(error, "usage: ");
+    strcat(error, argv[0]);
+    strcat(error, " <#Port>");
+    perror(error);
+    exit(1);
+  }
 }
