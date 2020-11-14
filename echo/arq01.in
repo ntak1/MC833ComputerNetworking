@@ -1,4 +1,7 @@
 ls
+exit
+echo "Here I am"
 pwd
 ls
+echo "Hello world"
 exit

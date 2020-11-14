@@ -17,7 +17,7 @@ int main(int argc, char **argv)
 {
    int listenfd;
    int connfd;
-   struct sockaddr_in servaddr;
+   struct sockaddr_in addr;
    char buf[MAXDATASIZE];
    time_t ticks;
 
@@ -29,13 +29,13 @@ int main(int argc, char **argv)
    }
 
    // Define IP address for IPV4 protocol and port number
-   bzero(&servaddr, sizeof(servaddr));
-   servaddr.sin_family = AF_INET;
-   servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-   servaddr.sin_port = htons(0); // System chooses the port number
+   bzero(&addr, sizeof(addr));
+   addr.sin_family = AF_INET;
+   addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+   addr.sin_port = htons(0); // System chooses the port number
 
    // Associate the socket with the address defined above
-   if (bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) == -1)
+   if (bind(listenfd, (struct sockaddr *)&addr, sizeof(addr)) == -1)
    {
       perror("bind");
       exit(1);
@@ -43,7 +43,7 @@ int main(int argc, char **argv)
 
    // Get the port number chosen by the system and show on stdout
    struct sockaddr_in curr_addr;
-   unsigned long addr_lenght = sizeof(servaddr);
+   unsigned long addr_lenght = sizeof(addr);
    int status = getsockname(listenfd, (struct sockaddr *)&curr_addr, (socklen_t *)&addr_lenght);
    if (!status)
    {
