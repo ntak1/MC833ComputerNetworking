@@ -52,7 +52,7 @@ int main(int argc, char **argv)
 
    // Indicates that the server is ready to accept incoming connections
    // Define the queue limit for the number of connections to the socket (LISTEQ)
-   if (listen(listenfd, LISTENQ) == -1)
+   if (listen(listenfd, BACKLOG) == -1)
    {
       perror("listen");
       exit(1);

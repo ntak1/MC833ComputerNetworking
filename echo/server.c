@@ -12,7 +12,7 @@
 #include <unistd.h>
 #include "syscalls.h"
 
-#define LISTENQ 10
+#define BACKLOG 10
 #define MAXDATASIZE 100
 #define MAXIPLENGTH 20
 #define MAXLINE 4096
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
     fflush(stdout);
   }
 
-  Listen(listenfd, LISTENQ);
+  Listen(listenfd, BACKLOG);
 
   printf("See client connections and disconnection information in connections.txt\n");
   printf("See commands outputs in server_ouput.txt\n");
