@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
   //--------------------------------------------------------------------
   // Set this variable any value other than 0 to be in "verbose" mode
-  char verbose = 0;
+  char verbose = 1;
   //--------------------------------------------------------------------
 
   // Connection variables
