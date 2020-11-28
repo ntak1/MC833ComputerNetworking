@@ -33,14 +33,15 @@ int main(int argc, char **argv)
 
   for (;;)
   {
+    sleep(1); // Add some delay so one client do net consume all the commands and we can test several clients
     sockfd = Socket(AF_INET, SOCK_STREAM, 0);
     if (connect(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
     {
       perror("connect error");
       exit(1);
     }
-
     print_local_address(sockfd, addr);
+    sleep(1); 
 
     // Wait for the command
     while ((n = read(sockfd, recvline, MAXLINE)) > 0)
@@ -65,9 +66,8 @@ int main(int argc, char **argv)
       if (n > 0 && recvline[n - 1] == '\n')
       {
         send_command_result(recvline, sockfd, addr);
-        sleep(2); // Add some delay so one client do net consume all the commands and we can test several clients
         close(sockfd);
-        break;
+        exit(0);
       }
     }
   }

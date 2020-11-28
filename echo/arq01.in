@@ -3,4 +3,5 @@ echo "Here I am"
 pwd
 ls
 echo "Hello world"
-exit
+pwd
+echo "Command executed!"

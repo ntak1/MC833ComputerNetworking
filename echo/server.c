@@ -2,28 +2,40 @@
  * RA: 184849
  * November 2020
  * 
- * Usage:
- * Exercise 2: For execise 2: se the variable in the begginig of main
- * function verbose to any value other than 0 to see the server output
- * in the stdout.
- * 
- * Exercise 3: For exercise 3: set verbose variable to 0.
+ * For report 3, exercise 3: change the value in the BACKLOG macro
  */
 #include <unistd.h>
+#include <signal.h>
+#include <sys/wait.h>
+#include <sys/resource.h>
 #include "syscalls.h"
 
-#define BACKLOG 10
+// Change this value
+#define BACKLOG 5
+
 #define MAXDATASIZE 100
 #define MAXIPLENGTH 20
 #define MAXLINE 4096
 #define MAXCOMMANDS 100
 #define LOCALHOST "127.0.0.1"
+#define NUM_REPEATS 5
 
 // Pragmas
 void validate_input(int argc, char **argv, char *error);
 void write_client_address(int sockfd, struct sockaddr_in servaddr, FILE *file);
 char **load_commands_from_file(FILE *inputfd, int *num_commands);
 char *get_ip_address(int sockfd, struct sockaddr_in servaddr);
+
+
+// Signal handler to avoid Zombies
+void sig_chld(int signo) 
+{
+  pid_t pid;
+  int stat;
+  pid = wait(&stat);
+  printf("child %d terminated\n", pid);
+  return;
+}
 
 /* Send commands to the client and waits for the result.
  * Write the result to a file. */
@@ -87,6 +99,8 @@ int main(int argc, char **argv)
 
   listenfd = Socket(AF_INET, SOCK_STREAM, 0);
 
+  signal (SIGCHLD, sig_chld);
+
   bzero(&servaddr, sizeof(servaddr));
   servaddr.sin_family = AF_INET;
   servaddr.sin_addr.s_addr = inet_addr(LOCALHOST);
@@ -120,16 +134,16 @@ int main(int argc, char **argv)
   printf("See commands outputs in server_ouput.txt\n");
   printf("[parent] Parent pid %u\n", getpid());
 
-  sleep(5); // Add some delay so one client do net consume all the commands and we can test several clients
   // Wait for connection requests
   int conn_number = -1;
-  while (conn_number < num_commands - 1)
+  while (NUM_REPEATS)
   {
     socklen_t len_client_addr = sizeof(clientaddr);
     connfd = Accept(listenfd, (sockaddr *)&clientaddr, &len_client_addr);
 
     // For each connection fork
     conn_number++;
+    conn_number %= num_commands;
     int pid = 0;
     if ((pid = fork()) == 0)
     {
@@ -170,6 +184,7 @@ int main(int argc, char **argv)
       }
 
       // Connection close instant
+      sleep(1);
       ticks = time(NULL);
       snprintf(buf, sizeof(buf), "Client with %s port %u DISCONNECTED at: %.24s\r\n",
                get_ip_address(connfd, clientaddr),

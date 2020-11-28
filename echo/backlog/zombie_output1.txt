@@ -1,0 +1,25 @@
+tcp        0      0 127.0.0.1:631           0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:5000          0.0.0.0:*               LISTEN      25040/./server      
+--------------------------------------
+tcp        0      0 127.0.0.1:631           0.0.0.0:*               LISTEN      -                   
+tcp        0      0 127.0.0.1:5000          0.0.0.0:*               LISTEN      25040/./server      
+tcp        0      0 127.0.0.1:5000          127.0.0.1:38638         ESTABLISHED 25058/./server      
+tcp        3      0 127.0.0.1:38632         127.0.0.1:5000          ESTABLISHED 25045/./client      
+tcp        0      0 127.0.0.1:5000          127.0.0.1:38646         ESTABLISHED 25062/./server      
+tcp        3      0 127.0.0.1:38646         127.0.0.1:5000          ESTABLISHED 25049/./client      
+tcp       17      0 127.0.0.1:38648         127.0.0.1:5000          ESTABLISHED 25053/./client      
+tcp        0      0 127.0.0.1:5000          127.0.0.1:38636         ESTABLISHED 25057/./server      
+tcp        0      0 127.0.0.1:5000          127.0.0.1:38642         ESTABLISHED 25060/./server      
+tcp        3      0 127.0.0.1:38638         127.0.0.1:5000          ESTABLISHED 25047/./client      
+tcp        0      0 127.0.0.1:5000          127.0.0.1:38634         ESTABLISHED 25056/./server      
+tcp        4      0 127.0.0.1:38636         127.0.0.1:5000          ESTABLISHED 25046/./client      
+tcp        0      0 127.0.0.1:5000          127.0.0.1:38640         ESTABLISHED 25059/./server      
+tcp        0      0 127.0.0.1:5000          127.0.0.1:38648         ESTABLISHED 25063/./server      
+tcp       17      0 127.0.0.1:38634         127.0.0.1:5000          ESTABLISHED 25044/./client      
+tcp        4      0 127.0.0.1:38642         127.0.0.1:5000          ESTABLISHED 25048/./client      
+tcp        0      0 127.0.0.1:5000          127.0.0.1:38632         ESTABLISHED 25055/./server      
+tcp       24      0 127.0.0.1:38644         127.0.0.1:5000          ESTABLISHED 25052/./client      
+tcp        0      0 127.0.0.1:5000          127.0.0.1:38644         ESTABLISHED 25061/./server      
+tcp        4      0 127.0.0.1:38650         127.0.0.1:5000          ESTABLISHED 25051/./client      
+tcp        0      0 127.0.0.1:5000          127.0.0.1:38650         ESTABLISHED 25064/./server      
+tcp       19      0 127.0.0.1:38640         127.0.0.1:5000          ESTABLISHED 25050/./client      
