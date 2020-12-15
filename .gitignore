@@ -1,3 +1,5 @@
-*.docx
-*.o
-*.pdf
+**.o
+**~*
+**.swp
+.vscode
+.DS_Store

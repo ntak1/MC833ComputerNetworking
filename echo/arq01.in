@@ -1,0 +1,7 @@
+ls
+echo "Here I am"
+pwd
+ls
+echo "Hello world"
+pwd
+echo "Command executed!"

@@ -17,7 +17,7 @@ int main(int argc, char **argv)
 {
    int listenfd;
    int connfd;
-   struct sockaddr_in servaddr;
+   struct sockaddr_in addr;
    char buf[MAXDATASIZE];
    time_t ticks;
 
@@ -29,13 +29,13 @@ int main(int argc, char **argv)
    }
 
    // Define IP address for IPV4 protocol and port number
-   bzero(&servaddr, sizeof(servaddr));
-   servaddr.sin_family = AF_INET;
-   servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-   servaddr.sin_port = 0; // System chooses the port number
+   bzero(&addr, sizeof(addr));
+   addr.sin_family = AF_INET;
+   addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+   addr.sin_port = htons(0); // System chooses the port number
 
    // Associate the socket with the address defined above
-   if (bind(listenfd, (struct sockaddr *)&servaddr, sizeof(servaddr)) == -1)
+   if (bind(listenfd, (struct sockaddr *)&addr, sizeof(addr)) == -1)
    {
       perror("bind");
       exit(1);
@@ -43,16 +43,16 @@ int main(int argc, char **argv)
 
    // Get the port number chosen by the system and show on stdout
    struct sockaddr_in curr_addr;
-   unsigned long addr_lenght = sizeof(servaddr);
+   unsigned long addr_lenght = sizeof(addr);
    int status = getsockname(listenfd, (struct sockaddr *)&curr_addr, (socklen_t *)&addr_lenght);
    if (!status)
    {
-      printf("Port: %d\n", curr_addr.sin_port);
+      printf("Port: %u\n", ntohs(curr_addr.sin_port));
    }
 
    // Indicates that the server is ready to accept incoming connections
    // Define the queue limit for the number of connections to the socket (LISTEQ)
-   if (listen(listenfd, LISTENQ) == -1)
+   if (listen(listenfd, BACKLOG) == -1)
    {
       perror("listen");
       exit(1);
@@ -79,9 +79,12 @@ int main(int argc, char **argv)
          // Get the printable form of the address
          const char *printable_addr = inet_ntop(client_socket_addr.sin_family, &client_socket_addr.sin_addr,
                                                 buffer, addr_len);
+
+         printf("----------------------------\n");
          printf("IP Address: %s\n", printable_addr);
          printf("Address len: %d\n", addr_len);
          printf("Port: %d\n", ntohs(client_socket_addr.sin_port));
+         printf("----------------------------\n");
       }
 
       ticks = time(NULL);
@@ -89,6 +92,10 @@ int main(int argc, char **argv)
       // Put the connection time in the buffer and write it to the connection socket
       snprintf(buf, sizeof(buf), "%.24s\r\n", ctime(&ticks));
       write(connfd, buf, strlen(buf));
+
+      // Wait in seconds
+      unsigned int sleep_sec = 3600;
+      sleep(sleep_sec);
 
       // Close the connection
       close(connfd);
