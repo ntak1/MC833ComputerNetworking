@@ -23,6 +23,6 @@ void Listen(int, int);
 
 int Accept(int, struct sockaddr *__restrict__, socklen_t *__restrict__);
 
-void Connect(int socket_fd, sockaddr *__retrict__, int addr_size);
+void Connect(int socket_fd, const struct sockaddr *, int addr_size);
 
 #endif

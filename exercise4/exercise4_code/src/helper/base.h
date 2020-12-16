@@ -8,6 +8,8 @@
 #include <unistd.h>
 
 #define MAXLINE 4096
+#define TRUE 1
+#define FALSE 0
 
 typedef struct sockaddr sockaddr;
 #endif
