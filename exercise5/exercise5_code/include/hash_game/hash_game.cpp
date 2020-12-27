@@ -26,6 +26,14 @@ class Game {
     int BOARD_START;
     int BOARD_END;
 
+    inline bool position_empty(int row, int col) {
+      return board[row][col] == ' ';
+    }
+
+    inline bool position_empty(pair<int, int> position) {
+      return board[position.first][position.second] == ' ';
+    }
+
   public:
     Game(Player *player1, Player *player2) {
       this->player1 = player1;
@@ -41,21 +49,21 @@ class Game {
     void print_board() {
       printf("\nMove %d\n", this->turn);
       printf("Next Player [%c]: %s\n", current_player->symbol, current_player->id.c_str());
-      printf("----------------\n");
+      printf("-------------\n");
       for (int row = BOARD_START; row <= BOARD_END; row++) {
         for (int col = BOARD_START; col <= BOARD_END; col++) {
-          printf("|%3c ", board[row][col]);
+          printf("|%2c ", board[row][col]);
         }
-        printf("|\n----------------\n");
+        printf("|\n-------------\n");
       }
-    }
 
-    inline bool position_empty(int row, int col) {
-      return board[row][col] == ' ';
-    }
-
-    inline bool position_empty(pair<int, int> position) {
-      return board[position.first][position.second] == ' ';
+      if(hash()) {
+        printf("GAME OVER! WINNER %s\n", winner->id.c_str());
+        return;
+      }
+      if(board_full()) {
+        printf("GAME OVER! DRAW\n");
+      }
     }
 
     bool board_full() {
@@ -81,7 +89,7 @@ class Game {
           hash = hash && (board[row][col] == board[row+1][col]); 
         }
         if (hash && !position_empty(row, col)) {
-          printf("Column hash!\n");
+          // printf("Column hash!\n");
           return true;
         }
         hash = true;
@@ -93,7 +101,7 @@ class Game {
           hash = hash && (board[row][col] == board[row][col+1]); 
         }
         if (hash && !position_empty(row, col)) {
-          printf("Row hash!\n");
+          // printf("Row hash!\n");
           return true;
         }
         hash = true;
@@ -103,21 +111,21 @@ class Game {
       bool diagonal1 = true;
       bool diagonal2 = true;
       for(int i = BOARD_START; i < BOARD_END; i++) {
-        diagonal1 = diagonal1 && (board[i][i] == board[i+1][i+1]) && position_empty(row, col);
+        diagonal1 = diagonal1 && (board[i][i] == board[i+1][i+1]) && !position_empty(i, i);
         diagonal2 = diagonal2 && (board[BOARD_END - i + 1][i]  == board[BOARD_END - i][i +1]) 
-                                    && position_empty(row, col);
+                                    && !position_empty(BOARD_END - i + 1, i);
       }
-      if (diagonal1) {
-        printf("Main diagonal hash!\n");
-      }
-      if (diagonal2) {
-        printf("Non main diagonal hash!\n");
-      }
+    //   if (diagonal1) {
+    //     // printf("Main diagonal hash!\n");
+    //   }
+    //   if (diagonal2) {
+    //     printf("Non main diagonal hash!\n");
+    //   }
       return diagonal1 || diagonal2;
     }
 
     bool game_over() {
-      return board_full() || hash();
+      return hash() || board_full();
     }
 
     int get_turn() {
@@ -128,12 +136,18 @@ class Game {
       int row = position.first;
       int col = position.second;
       if (row < BOARD_START || row > BOARD_END || col < BOARD_START || col > BOARD_END) {
+        printf("Error: position out of bounds!");
+        return true;
+      }
+      if (!position_empty(position)) {
+        printf("Error: position is not empty!");
         return true;
       }
       return false;
     }
 
     bool make_move(Player *player, pair<int,int> position) {
+     turn++;
      if (invalid_position(position)) {
        return false;
      }
@@ -144,10 +158,12 @@ class Game {
        board[position.first][position.second] = player2->symbol;
        current_player = player1;
      }
-     turn++;
-     if(game_over()) {
+     if(hash()) {
        winner = player;
-       printf("Winner is %s!\n", winner->id.c_str());
+       return true;
+     }
+     if(board_full()) {
+       printf("GAME OVER! DRAW!\n");
      }
      return true;
     }
@@ -163,21 +179,28 @@ int main(void) {
   vector<pair<int, int> > player1_moves;
   player1_moves.push_back(pair<int,int>(1,1));
   player1_moves.push_back(pair<int,int>(2,2));
+  player1_moves.push_back(pair<int,int>(3,2));
+  player1_moves.push_back(pair<int,int>(3,1));
   player1_moves.push_back(pair<int,int>(3,3));
 
 
   vector<pair<int, int> > player2_moves;
   player2_moves.push_back(pair<int,int>(1,2));
   player2_moves.push_back(pair<int,int>(1,3));
+  player2_moves.push_back(pair<int,int>(2,1));
+  player2_moves.push_back(pair<int,int>(2,3));
 
   Game *game = new Game(player1, player2);
 
   int i = 0;
   int j = 0;
-  while(!(game->game_over()) && i < 20) {
-    game->print_board();
+  game->print_board();
+  while(!(game->game_over())) {
     game->make_move(player1, player1_moves[i++]);
     game->print_board();
+    if (game->game_over()) {
+      break;
+    }
     game->make_move(player2, player2_moves[j++]);
     game->print_board();
   }
