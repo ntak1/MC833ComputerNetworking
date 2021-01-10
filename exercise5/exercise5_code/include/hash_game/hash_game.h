@@ -51,12 +51,18 @@ class Game {
     void print_board() {
       printf("\nMove %d\n", this->turn);
       printf("Next Player [%c]: %s\n", current_player->symbol, current_player->id.c_str());
-      printf("-------------\n");
+
+      printf("   | 1 | 2 | 3 |\n");
+      printf("----------------\n");
       for (int row = BOARD_START; row <= BOARD_END; row++) {
         for (int col = BOARD_START; col <= BOARD_END; col++) {
-          printf("|%2c ", board[row][col]);
+          if(col == BOARD_START) {
+            printf(" %c |%2c ", 'a' + row - 1,  board[row][col]);
+          } else{
+            printf("|%2c ", board[row][col]);
+          }
         }
-        printf("|\n-------------\n");
+        printf("|\n----------------\n");
       }
 
       if(hash()) {

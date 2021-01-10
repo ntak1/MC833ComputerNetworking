@@ -1,16 +1,7 @@
-#include "../include/helper/client_helper.h"
 #include "../include/hash_game/hash_game.h"
 
 using namespace std;
-
 int main(void) {
-  // Client server
-
-  // Client opponent
-
-  // User input
-
-  // Game logic
   string player1_id = "player 1";
   string player2_id = "player 2";
 
