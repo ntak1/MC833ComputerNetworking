@@ -34,10 +34,11 @@ void Listen(int fd, int queue_size)
 }
 
 // The listening socket accepts the conection and returns a socket descriptor for the connection
-int Accept(int listenfd, struct sockaddr *__restrict__ address, socklen_t *__restrict__ sock_len)
+int Accept(int listenfd, struct sockaddr *__restrict__ address)
 {
   int connfd = -1;
-  if ((connfd = accept(listenfd, (struct sockaddr *)address, sock_len)) == -1)
+  socklen_t len_socket_addr = sizeof((*address));
+  if ((connfd = accept(listenfd, (struct sockaddr *)address, &len_socket_addr)) == -1)
   {
     perror("accept");
     exit(1);

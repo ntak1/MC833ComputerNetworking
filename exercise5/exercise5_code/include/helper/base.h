@@ -6,7 +6,6 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-#define MAXLINE 4096
 
 typedef struct sockaddr sockaddr;
 #endif
