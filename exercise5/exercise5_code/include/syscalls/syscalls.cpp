@@ -47,7 +47,7 @@ int Accept(int listenfd, struct sockaddr *__restrict__ address)
 }
 
  // Used by the client to establish a connection with the server
- void Connect(int socket_fd, const struct sockaddr *server_addr, int addr_size) {
+ void Connect(int socket_fd, const struct sockaddr *server_addr) {
     if (connect(socket_fd, server_addr, sizeof(server_addr)) < 0)
     {
       perror("connect error");

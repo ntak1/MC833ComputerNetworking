@@ -6,5 +6,4 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
-typedef struct sockaddr sockaddr;
 #endif

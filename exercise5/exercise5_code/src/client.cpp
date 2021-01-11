@@ -1,48 +1,91 @@
+/**
+ * MC833
+ * Author: Naomi Takemoto
+ * Jan 2021
+ * The client-client UDP communication is based on the following tutorial
+ * https://www.geeksforgeeks.org/udp-server-client-implementation-c/
+ */
+
+#include <cstdio>
+
+#include "../include/syscalls/syscalls.h"
 #include "../include/helper/client_helper.h"
 #include "../include/hash_game/hash_game.h"
 
 using namespace std;
 
+#define MAX_BYTES 1024
+#define MAX_ID 50
+
+#define DEFAULT_SERVER_ID "127.0.0.1"
+#define DEFAULT_SERVER_PORT 5000
+#define DEFAULT_UDP_SERVER_PORT 5500
+
+string readUserLogin() {
+  char id[MAX_ID];
+  printf("Please input your login: ");
+  scanf("%s", id);
+  printf("-----------------------------\n");
+  return (string(id));
+}
+
 int main(void) {
-  // Client server
+  string self_player_id =  readUserLogin();
 
-  // Client opponent
+  // Configure variables to connect with the server
+  int server_sockfd_tcp;
+  struct sockaddr_in server_addr_tcp;
 
-  // User input
+  bzero(&server_addr_tcp, sizeof(server_addr_tcp));
+  server_addr_tcp.sin_family = AF_INET;
+  server_addr_tcp.sin_port = htons(DEFAULT_SERVER_PORT);
+  if (inet_pton(AF_INET, DEFAULT_SERVER_ID, &server_addr_tcp.sin_addr) <= 0)
+  {
+    perror("inet_pton error");
+    exit(1);
+  }
 
-  // Game logic
-  string player1_id = "player 1";
-  string player2_id = "player 2";
+  // Connect to the server
+  server_sockfd_tcp = Socket(AF_INET, SOCK_STREAM, 0);
+  Connect(server_sockfd_tcp, (struct sockaddr*) &server_addr_tcp);
+  printf("User: %s connected to the SERVER!\n", self_player_id.c_str());
 
-  Player *player1 = new Player(player1_id, 'X');
-  Player *player2 = new Player(player2_id, 'O');
+  // Create UDP socket to communicate with opponent player
+  struct sockaddr_in peeraddr_udp; // opponent address
+  int peerfd_udp = Socket(AF_INET, SOCK_DGRAM, 0);
+  
+  peeraddr_udp.sin_family = AF_INET; // IPV4
+  peeraddr_udp.sin_addr.s_addr = INADDR_ANY;
+  peeraddr_udp.sin_port = htons(DEFAULT_UDP_SERVER_PORT);
 
-  vector<pair<int, int> > player1_moves;
-  player1_moves.push_back(pair<int,int>(1,1));
-  player1_moves.push_back(pair<int,int>(2,2));
-  player1_moves.push_back(pair<int,int>(3,2));
-  player1_moves.push_back(pair<int,int>(3,1));
-  player1_moves.push_back(pair<int,int>(3,3));
+  Bind(peerfd_udp, (struct sockaddr *)&peeraddr_udp);
 
+  // Configure variables for select command usage
+  fd_set readfds;           // file descriptors set
+  bool stdio_eof = false;   // if the stdio reached EOF
 
-  vector<pair<int, int> > player2_moves;
-  player2_moves.push_back(pair<int,int>(1,2));
-  player2_moves.push_back(pair<int,int>(1,3));
-  player2_moves.push_back(pair<int,int>(2,1));
-  player2_moves.push_back(pair<int,int>(2,3));
+  FD_ZERO(&readfds);
 
-  Game *game = new Game(player1, player2);
+  while (true) {
+    // Connect to the server and get the opponent address
 
-  int i = 0;
-  int j = 0;
-  game->print_board();
-  while(!(game->game_over())) {
-    game->make_move(player1, player1_moves[i++]);
-    game->print_board();
-    if (game->game_over()) {
-      break;
+    // Configure UDP socket to play the game with opponent
+    if (stdio_eof == false) {            // stdin
+      FD_SET(fileno(stdin), &readfds);
+    } 
+    FD_SET(server_sockfd_tcp, &readfds); // tcp
+    FD_SET(peerfd_udp, &readfds);        // udp
+
+    if (FD_ISSET(fileno(stdin), &readfds)) {
+      // Deal with stdin
     }
-    game->make_move(player2, player2_moves[j++]);
-    game->print_board();
+
+    if (FD_ISSET(peerfd_udp, &readfds)) {
+      // Deal with opponent
+    }
+
+    if (FD_ISSET(server_sockfd_tcp, &readfds)) {
+      // Deal with server
+    }
   }
 }

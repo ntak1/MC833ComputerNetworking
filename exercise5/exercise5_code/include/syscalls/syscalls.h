@@ -13,8 +13,6 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 
-typedef struct sockaddr sockaddr;
-
 int Socket(int socket_family, int socket_type, int protocol);
 
 void Bind(int, struct sockaddr *);
@@ -23,6 +21,6 @@ void Listen(int, int);
 
 int Accept(int, struct sockaddr *__restrict__);
 
-void Connect(int socket_fd, const struct sockaddr *, int addr_size);
+void Connect(int socket_fd, const struct sockaddr *);
 
 #endif
