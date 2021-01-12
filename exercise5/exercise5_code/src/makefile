@@ -1,5 +1,5 @@
 CC=g++
-CC_FLAGS=-Wall
+CC_FLAGS=-Wall  -std=c++11
 
 # Directories
 HASH_GAME_DIR="../include/hash_game"
