@@ -17,6 +17,16 @@ class Player {
     }
 };
 
+enum GameState {
+  PENDING_LOGIN,
+  WAITING_PLAYERS_LIST,
+  WAITING_NEW_PLAYER,
+  PLAYER_TURN,
+  WAITING_OTHER_PLAYER_MOVE,
+  GAME_OVER,
+  WAITING_SCORES
+};
+
 class Game {
   private:
     int board[4][4];
@@ -37,15 +47,33 @@ class Game {
     }
 
   public:
-    Game(Player *player1, Player *player2) {
-      this->player1 = player1;
-      this->player2 = player2;
+    void basicInitialization() {
       this->turn = 0;
       this->BOARD_START = 1;
       this->BOARD_END = 3;
-      this->current_player = player1;
+      this->current_player = NULL;
       this->winner = NULL;
       fill(*board, *board + 16, ' ');
+    }
+    Game(Player *player1, Player *player2) {
+      basicInitialization();
+      this->player1 = player1;
+      this->player2 = player2;
+    }
+
+    Game(string player_id, char symbol, bool firstPlayer) {
+      basicInitialization();
+      Player *player = new Player(player_id, symbol);
+      if (firstPlayer) {
+        this->current_player = player;
+        this->player1 = player;
+      } else {
+        this -> player2 = player;
+      }
+    }
+
+    Game() {
+      basicInitialization();
     }
 
     void print_board() {
@@ -57,7 +85,7 @@ class Game {
       for (int row = BOARD_START; row <= BOARD_END; row++) {
         for (int col = BOARD_START; col <= BOARD_END; col++) {
           if(col == BOARD_START) {
-            printf(" %c |%2c ", 'a' + row - 1,  board[row][col]);
+            printf(" %c |%2c ", row,  board[row][col]);
           } else{
             printf("|%2c ", board[row][col]);
           }
@@ -97,7 +125,6 @@ class Game {
           hash = hash && (board[row][col] == board[row+1][col]); 
         }
         if (hash && !position_empty(row, col)) {
-          // printf("Column hash!\n");
           return true;
         }
         hash = true;
@@ -109,7 +136,6 @@ class Game {
           hash = hash && (board[row][col] == board[row][col+1]); 
         }
         if (hash && !position_empty(row, col)) {
-          // printf("Row hash!\n");
           return true;
         }
         hash = true;
@@ -168,6 +194,10 @@ class Game {
        printf("GAME OVER! DRAW!\n");
      }
      return true;
+    }
+
+    Player * getWinner() {
+      return winner;
     }
 };
 

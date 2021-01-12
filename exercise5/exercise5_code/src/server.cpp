@@ -212,8 +212,6 @@ int main(int argc, char **argv) {
               Player player = allPlayers.insertPlayer(message, address, port);
               playerFromPort[port] = &player;
             }
-
-
             // Delete
             message = "Dumb message\n";
             write(socket_descriptor, message.c_str(), message.size());
