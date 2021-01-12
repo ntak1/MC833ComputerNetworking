@@ -60,6 +60,9 @@ class RequestBuilder {
       return "uploadResult: " + player_id + " " + to_string(result);
     }
 
+    string sendMovement(int row, int col) {
+      return to_string(row) + " " + to_string(col);
+    }
 };
 
 int writeSocket(string message, int socketfd) {
@@ -68,6 +71,24 @@ int writeSocket(string message, int socketfd) {
   return write(socketfd, buffer, message.size());
 }
 
+pair<int, int> getRowColFromCString(char message[], int message_size) {
+  int row, col;
+  char temp[50];
+  int j = 0;
+  for (int i = 0; i < message_size; i++) {
+    if (message[i] == ' ') {
+      temp[j] = 0;
+      row = atoi(temp);
+      j = 0;
+    } else {
+      temp[j] = message[i];
+      j++;
+    }
+  }
+  temp[j] = 0;
+  col = atoi(temp);
+  return make_pair(row, col);
+}
 
 int main(void) {
   // Configure variables to connect with the server
@@ -107,13 +128,14 @@ int main(void) {
   bool stdio_eof = false;                                   // if the stdio reached EOF
   FD_ZERO(&readfds);
 
-  RequestBuilder *requestBuilder = new RequestBuilder(self_player_id);
+  RequestBuilder *request_builder = new RequestBuilder(self_player_id);
   GameState state = GameState::PENDING_LOGIN;
   string opponent_id = "";
   string message;
   char buffer[MAX_BYTES];
   Game *game = new Game();
-  Player *selfPlayer = new Player(self_player_id, '?');
+  Player *self_player = new Player(self_player_id, '?');
+  Player *opponent_player = new Player("", '?');
 
   printInstructions();
 
@@ -127,7 +149,7 @@ int main(void) {
 
     // Make login
     if (state == GameState:: PENDING_LOGIN) { // Send player id to server
-      int n = writeSocket(requestBuilder->login(), server_sockfd_tcp);
+      int n = writeSocket(request_builder->login(), server_sockfd_tcp);
       if (n == 0) { exit(1);}
       game = new Game();
       state = GameState::WAITING_PLAYERS_LIST;
@@ -137,24 +159,49 @@ int main(void) {
     // Deal with stdin
     if (FD_ISSET(fileno(stdin), &readfds)) {
       switch (state) {
-        case GameState::WAITING_PLAYERS_LIST:
+        case GameState::WAITING_NEW_PLAYER:                             // Player select the opponent
           char opponentName[50];
           scanf("%s", opponentName);
           opponent_id = string(opponentName);
-          state = GameState::WAITING_NEW_PLAYER;
+          writeSocket(opponent_id, server_sockfd_tcp);
+          state = GameState::WAITING_ACCEPT;
+          break;
+
         case GameState::PLAYER_TURN:
           int row, col;
           scanf("%d %d", &row, &col);
-          game->make_move(selfPlayer, make_pair(row, col));
+          game->make_move(self_player, make_pair(row, col));
+          writeSocket(request_builder->sendMovement(row, col), peerfd_udp);
+          if (game->game_over()) {
+            state = GameState::GAME_OVER;
+          } else {
+            state = GameState::WAITING_OTHER_PLAYER_MOVE;
+          }
+          break;
+
+        case GameState::GAME_OVER:                                      // Game has finished, but player wants to know the scores
+          printf("To get the scores from the server: input ? and enter. To skip to next match press enter.\n");
+          char shouldGetScores;
+          scanf("%c", &shouldGetScores);
+          if(shouldGetScores == '?') {
+            state = GameState::WAITING_SCORES;
+          } else {
+            state = GameState::PENDING_LOGIN;
+          }
+          break;
         default:
           break;
       }
     }
 
     // Deal with opponent
-    if (FD_ISSET(peerfd_udp, &readfds)) {
+    if (FD_ISSET(peerfd_udp, &readfds)) {                               // Receive movement from opponent
       if (state == GameState::WAITING_OTHER_PLAYER_MOVE) {
-        // TODO: Finish
+        int message_size = read(peerfd_udp, buffer, MAX_BYTES);
+        buffer[message_size] = 0;
+        pair<int,int> position = getRowColFromCString(buffer, message_size);
+        printf("Opponent move: %d %d\n", position.first, position.second);
+        game->make_move(opponent_player, position);
         state = GameState::PLAYER_TURN;
       }
     }
@@ -163,41 +210,48 @@ int main(void) {
     int message_size;
     if (FD_ISSET(server_sockfd_tcp, &readfds)) {
       switch (state) {
-        case GameState::WAITING_PLAYERS_LIST:
+        case GameState::WAITING_PLAYERS_LIST:                           // Server sent the available players list
           message_size = read(server_sockfd_tcp, buffer, MAX_BYTES);
           buffer[message_size] = 0;
           printf("%s",buffer);
           state = GameState::WAITING_NEW_PLAYER;
           break;
-        case GameState::WAITING_NEW_PLAYER: // Send the chose player to the server
-          // Opponent has accepted the invitation
+
+        case GameState::WAITING_ACCEPT:                                 // If the opponent has accepted the invitation
           message_size = read(server_sockfd_tcp, buffer, MAX_BYTES);
           if (message_size == 0) {exit(1);}
           buffer[message_size] = 0;
           message = string(buffer);
           if (message == "yes") {
             state = GameState::PLAYER_TURN;
+            opponent_player = new Player(opponent_id, 'X');
+            game = new Game(self_player, opponent_player);
           } else if (message == "no") {
             state = GameState::WAITING_PLAYERS_LIST;
+          } else {                                                      // The opponent has made and invitation
+
           }
           break;
-        case GameState::GAME_OVER:
+
+        case GameState::GAME_OVER:                                      // The game has finished, send the result to the server
           if (game->getWinner() == NULL) {
-            writeSocket(requestBuilder->uploadResult(0), server_sockfd_tcp);
+            writeSocket(request_builder->uploadResult(0), server_sockfd_tcp);
           }
           else if (game->getWinner()->id == self_player_id) {
-            writeSocket(requestBuilder->uploadResult(1), server_sockfd_tcp);
+            writeSocket(request_builder->uploadResult(1), server_sockfd_tcp);
           } else {
-            writeSocket(requestBuilder->uploadResult(-1), server_sockfd_tcp);
+            writeSocket(request_builder->uploadResult(-1), server_sockfd_tcp);
           }
-          state = GameState::PENDING_LOGIN;
           break;
-        case GameState::WAITING_SCORES:
+
+        case GameState::WAITING_SCORES:                                 // The server has sent the scores
           message_size = read(server_sockfd_tcp, buffer, MAX_BYTES);
           buffer[message_size] = 0;
           message = string(buffer);
           printf("%s", message.c_str());
+          state = GameState::PENDING_LOGIN;                             // Back to the initial state
           break;
+
         default:
           break;
       }
