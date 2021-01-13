@@ -248,9 +248,9 @@ int main(int argc, char *argv[]) {
       buffer[message_size] = 0;
       switch (state) {
         case GameState::WAITING_PLAYERS_LIST:                           // Server sent the available players list
-          printf("AVAILABLE OPPONENTS LIST\n");
+          printf("\n[---AVAILABLE OPPONENTS LIST---]\n");
           printf("%s", buffer);
-          printf("type the player_name: ");
+          printf("[TYPE OPPONENT NAME]: ");
           char opponentName[50];
           scanf("%s", opponentName);
           opponent_id = string(opponentName);
@@ -266,17 +266,16 @@ int main(int argc, char *argv[]) {
             opponent_addr = tokens.at(2);
             opponent_port = atoi(tokens.at(3).c_str());
             game = new Game(self_player, opponent_player);
-          } else if (message == "no") {
+          } else if (message == "no") {                                 // If the opponent has denied the invitation
+            writeSocket(request_builder->login(), tcp_listen_port);
             state = GameState::WAITING_PLAYERS_LIST;
           } else {                                                      // The opponent has made and invitation
-            // Todo
-            // Parse message
-            opponent_id = tokens.at(1);
             printf("Opponent [%s] has made an invitation. Accept ? (y/n)\n", opponent_id.c_str());
+            opponent_id = tokens.at(1);
             char ans;
             scanf("%c", &ans);
             if (ans == 'y') {
-              printf("You accepted the invitation, your symbol is: '0'\n");
+              printf("You accepted the invitation, your symbol is: 'O'\n");
               writeSocket(request_builder->accept(opponent_id), server_sockfd_tcp);
               opponent_player = new Player(opponent_id, 'X');
               self_player->symbol = 'O';
@@ -291,6 +290,7 @@ int main(int argc, char *argv[]) {
           message_size = read(server_sockfd_tcp, buffer, MAX_BYTES);
           buffer[message_size] = 0;
           message = string(buffer);
+          printf("\n[---SCORES---]\n");
           printf("%s", message.c_str());
           state = GameState::PENDING_LOGIN;                             // Back to the initial state
           break;
