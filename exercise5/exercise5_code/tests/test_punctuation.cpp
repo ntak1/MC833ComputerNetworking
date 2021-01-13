@@ -4,8 +4,8 @@
 using namespace std;
 
 int main(void) {
-  Punctuation punctuation;
-  Player entry = punctuation.insertPlayer("DummyName", "address", 123);
+  PlayersContainer punctuation;
+  Player entry = punctuation.insertOrUpdatePlayer("DummyName", "address", 123);
 
   printf("%s\n", entry.toString().c_str());
 
