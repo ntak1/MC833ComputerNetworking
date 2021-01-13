@@ -47,6 +47,10 @@ class PlayersContainer {
       return players[player_name];
     }
 
+    void setPlayerAvailable(string player_name, bool available) {
+      players[player_name].available = available;
+    }    
+    
     Player insertOrUpdatePlayer(string player_name, string address, int port) {
       auto it = players.find(player_name);
       if (it == players.end()) {
@@ -63,6 +67,7 @@ class PlayersContainer {
         players[player_name].address = address;
         players[player_name].port = port;
       }
+      return players[player_name];
     }
 
     void addWinCount(string player_name) {

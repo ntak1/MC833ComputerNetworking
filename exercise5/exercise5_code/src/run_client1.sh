@@ -4,7 +4,7 @@ make
 # Launch the server
 #../bin/server.o 5000
 
-tcp_port=5001
+tcp_port=5002
 upd_port=5500
 # Launch the clients
 ../bin/client.o $tcp_port $upd_port

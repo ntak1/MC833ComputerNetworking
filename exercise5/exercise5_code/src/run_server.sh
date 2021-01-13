@@ -5,4 +5,4 @@ make
 #../bin/server.o 5000
 
 # Launch the clients
-../bin/server.o 5001
+../bin/server.o 5002
