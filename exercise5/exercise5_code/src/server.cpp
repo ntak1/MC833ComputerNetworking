@@ -58,13 +58,26 @@ void removeAvailablePlayer(vector<Player*> players, Player *player) {
   }
 }
 
+vector<string> parseRequest(string request) {
+  char sep = ' ';
+  int init = 0;
+  vector<string> ans;
+  for (int i = 0; i < request.size(); i++) {
+    if(request[i] == sep) {
+      ans.push_back(request.substr(init, i - init));
+      init = i + 1;
+    }
+  }
+  if (init < request.size()) {
+    ans.push_back(request.substr(init, request.size() - init));
+  }
+  return ans;
+}
+
 int main(int argc, char **argv) {
   // Connection variables
   char error[MAX_BYTES] = {0};
   char buffer[MAX_BYTES] = {0};
-
-  // File to store the players score
-  FILE *punctuation_fd = create_file(PUNCTUATION_FILE);
 
   // Input: args
   validate_input(argc, argv, error);
@@ -140,20 +153,13 @@ int main(int argc, char **argv) {
       int port = ntohs(servaddr.sin_port);
       string address = string(inet_ntoa(servaddr.sin_addr));
 
-      printf("New connection, socket fd: %d, if: %s, port: %d\n",
+      printf("New connection, socket fd: %d, IP: %s, port: %d\n",
         new_socket, inet_ntoa(servaddr.sin_addr), port);
 
-      // Sends to the client its opponent player address if some is available
-      if (availablePlayers.size() > 0) {
-        Player *player = popAvailblePlayer(availablePlayers);
-        snprintf(buffer, MAX_BYTES, "%s %d", player->address.c_str(), player->port);
-        write(new_socket, buffer, sizeof(buffer));
-      } else {
-        Player *player = new Player();
-        player->port = port;
-        player->address = address;
-        addAvailablePlayer(availablePlayers, player);
-      }
+      Player *player = new Player();
+      player->port = port;
+      player->address = address;
+      addAvailablePlayer(availablePlayers, player);
 
       // Add new socket to array of sockets
       for (int i = 0; i < MAX_CLIENTS; i++) {
@@ -184,38 +190,27 @@ int main(int argc, char **argv) {
             client_socket[i] = 0;
                       
           }
-
           // Client sent some valid request to the server
           else {
-            buffer[message_size] = 0;
+            buffer[message_size + 1] = 0;
             string message = string(buffer);
+            vector<string> tokens = parseRequest(message);
+            printf("Tokens received from client: ");
+            for(auto m: tokens) {
+              printf("[%s] ", m.c_str());
+            }
+            printf("\n");
+            printf("Client request: [%s]\n", buffer);
 
-            // Player sent loss -1
-            if (message == "-1") {
-              allPlayers.addLossCount(playerFromPort[port]->player_name);
-            }
-            // Player sent win +1
-            else if (message == "+1") {
-              allPlayers.addWinCount(playerFromPort[port]->player_name);
-            }
-            // Player requested punctuation ?
-            else if (message == "?") {
-              string player_name = allPlayers.get_player(playerFromPort[port]->player_name).toString();
-              snprintf(buffer, sizeof(buffer), "%s", player_name.c_str());
+            // Sends to the client its opponent player address if some is available
+            if(tokens.at(0) == "login:") {
+              printf("[LOGIN] user %s requested list of available players.\n", tokens.at(1).c_str());
+              Player *player = popAvailblePlayer(availablePlayers);
+              snprintf(buffer, MAX_BYTES, "%s %d", player->address.c_str(), player->port);
               write(socket_descriptor, buffer, sizeof(buffer));
-              printf("----------------------\n");
-              printf("Information request:\n%s", player_name.c_str());
-              printf("----------------------\n");
             }
-            // Login; player sent it's id:
-            else {
-              Player player = allPlayers.insertPlayer(message, address, port);
-              playerFromPort[port] = &player;
-            }
-            // Delete
-            message = "Dumb message\n";
-            write(socket_descriptor, message.c_str(), message.size());
-            fputs(message.c_str(), punctuation_fd);
+
+            
           }
         }
       }// end for
