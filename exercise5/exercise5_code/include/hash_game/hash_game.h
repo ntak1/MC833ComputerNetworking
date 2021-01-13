@@ -57,7 +57,12 @@ class Game {
       fill(*board, *board + 16, ' ');
     }
     Game(Player *player1, Player *player2) {
-      basicInitialization();
+      this->turn = 0;
+      this->BOARD_START = 1;
+      this->BOARD_END = 3;
+      this->current_player = NULL;
+      this->winner = NULL;
+      fill(*board, *board + 16, ' ');;
       this->player1 = player1;
       this->player2 = player2;
     }
@@ -94,7 +99,7 @@ class Game {
         printf("|\n----------------\n");
       }
 
-      if(hash()) {
+      if(hash() && winner != NULL) {
         printf("GAME OVER! WINNER %s\n", winner->id.c_str());
         return;
       }

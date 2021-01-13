@@ -56,11 +56,11 @@ int writeSocket(string message, int socketfd) {
 class RequestBuilder {
   public:
     // Return a string containing all the player's scores
-    string scoreTableBuilder(PlayersContainer playersContainer) {
+    string scoreTableBuilder(PlayersContainer playersContainer, string player_requester) {
       string result;
       auto players = playersContainer.getPlayers();
       for (auto player: players) {
-        if (player.second.available) {
+        if (player.second.available && player.first != player_requester) {
           result += player.second.toString();
           result += "-----------------------------\n";
         }
@@ -69,8 +69,9 @@ class RequestBuilder {
     }
     // Build the request that informs a player that other player (inviter) wants to challenge him
     // for a new match.
-    string invite(string inviter) {
-      return "invitation: " + inviter;
+    string invite(string inviter, string address, int port) {
+      printf("DEBUG: %s\n", inviter.c_str());
+      return "invitation: " + inviter + " " + address + " " + to_string(port);
     }
 
     // Build the request that informs a player that his opponent has accepted or not the challenge and
@@ -194,12 +195,11 @@ int main(int argc, char **argv) {
 
         socklen_t len_addr = sizeof(servaddr);
         getpeername(socket_descriptor, (sockaddr *) &servaddr, &len_addr);
-        int port = ntohs(servaddr.sin_port);
         string address = string(inet_ntoa(servaddr.sin_addr));
 
         // Client disconnected: close the connection and clear client_socket
         if (message_size == 0) {
-          printf("Client disconnected: [IP: %s], [PORT: %d])\n", address.c_str(), port);
+          printf("Client disconnected: [IP: %s])\n", address.c_str());
           close(socket_descriptor);
           client_socket[i] = 0;
         }
@@ -216,10 +216,14 @@ int main(int argc, char **argv) {
           // Login: make the player available
           if(tokens.at(0) == "login:") {
             printf("[LOGIN] user %s requested list of available players.\n", tokens.at(1).c_str());
-            writeSocket(requestBuilder.scoreTableBuilder(allPlayers), socket_descriptor);
+            if(allPlayers.getAvailablePlayersIds().size() == 1 && allPlayers.getAvailablePlayersIds()[0] == tokens.at(1)) {
+              writeSocket("", socket_descriptor);
+            } else {
+              writeSocket(requestBuilder.scoreTableBuilder(allPlayers, tokens.at(1)), socket_descriptor);
+            }
 
             newPlayerId = tokens.at(1);
-            allPlayers.insertOrUpdatePlayer(newPlayerId,address, socket_descriptor);
+            allPlayers.insertOrUpdatePlayer(newPlayerId, address, atoi(tokens.at(2).c_str()));
             allPlayers.setPlayerAvailable(newPlayerId, true);
             playerIdFromSocket[socket_descriptor] = newPlayerId;
           }
@@ -230,11 +234,15 @@ int main(int argc, char **argv) {
             // Get socket from player id
             inviter = tokens.at(1);
             invited = tokens.at(2);
+            printf("[INVITE] [%s] [%s]\n", inviter.c_str(), invited.c_str());
             int invited_player_socket = getSocketFromPlayerId(playerIdFromSocket, invited);
             if (invited_player_socket != -1) {
-              writeSocket(requestBuilder.invite(inviter), invited_player_socket);
+              writeSocket(requestBuilder.invite(inviter, address, atoi(tokens.at(3).c_str())), invited_player_socket);
             } else {
               printf("Error: could not find socket descriptor!\n");
+              for (auto temp: playerIdFromSocket) {
+                printf("[%d] [%s]\n", temp.first, temp.second.c_str());
+              }
             }
           }
           // Player x (invited) accepted the invitation of player y, server informs y (inviter)
@@ -265,9 +273,9 @@ int main(int argc, char **argv) {
             }
           }
           else if (tokens.at(0) == "requestScore:") {
-            writeSocket(requestBuilder.scoreTableBuilder(allPlayers), socket_descriptor);
+            writeSocket(requestBuilder.scoreTableBuilder(allPlayers, tokens.at(1)), socket_descriptor);
           } else {
-            printf("Server received an invalid request!");
+            printf("Server received an invalid request!\n[%s]", buffer);
           }
         }
       }

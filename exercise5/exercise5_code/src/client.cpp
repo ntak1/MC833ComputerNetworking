@@ -41,12 +41,12 @@ class RequestBuilder {
       this->player_id = player_id;
     }
 
-    string login() {
-      return "login: " + player_id;
+    string login(int port) {
+      return "login: " + player_id + " " + to_string(port);
     }
 
-    string invite(string opponent_id) {
-      return "invite: " + player_id + " " + opponent_id;
+    string invite(string opponent_id, int port) {
+      return "invite: " + player_id + " " + opponent_id + " " + to_string(port);
     }
 
     string accept(string opponent_id) {
@@ -141,15 +141,21 @@ int main(int argc, char *argv[]) {
   string self_player_id =  readUserLogin();
   printf("User: %s connected to the SERVER!\n", self_player_id.c_str());
 
-  // Create UDP socket to communicate with opponent player
+  // Create UDP socket to write to the opponent
   struct sockaddr_in peeraddr_udp;                          // opponent address
   int peerfd_udp = Socket(AF_INET, SOCK_DGRAM, 0);
   
   peeraddr_udp.sin_family = AF_INET;                        // IPV4
   peeraddr_udp.sin_addr.s_addr = INADDR_ANY;
-  peeraddr_udp.sin_port = htons(udp_listen_port);
 
-  Bind(peerfd_udp, (struct sockaddr *)&peeraddr_udp);
+  // Configure listening socket to read from the opponent
+  struct sockaddr_in selfaddr_udp;                          // opponent address
+  int selffd_udp = Socket(AF_INET, SOCK_DGRAM, 0);
+  selfaddr_udp.sin_family = AF_INET;                        // IPV4
+  selfaddr_udp.sin_addr.s_addr = INADDR_ANY; 
+  selfaddr_udp.sin_port = htons(udp_listen_port);
+  Bind(selffd_udp, (struct sockaddr *)&peeraddr_udp);
+  
   print_local_address(peerfd_udp, peeraddr_udp);
 
   // Configure variables for select command usage
@@ -176,14 +182,15 @@ int main(int argc, char *argv[]) {
 
   while (true) {
     // Configure selector
+    FD_ZERO(&readfds);
     if (stdio_eof == false) {            // stdin
       FD_SET(fileno(stdin), &readfds);
     } 
     FD_SET(server_sockfd_tcp, &readfds); // tcp
-    FD_SET(peerfd_udp, &readfds);        // udp
+    FD_SET(selffd_udp, &readfds);        // udp
 
     if (state == GameState:: PENDING_LOGIN) { // Send player id to server
-      int n = writeSocket(request_builder->login(), server_sockfd_tcp);
+      int n = writeSocket(request_builder->login(tcp_listen_port), server_sockfd_tcp);
       if (n == 0) {
         printf("Server disconnected! Loging out ...\n");
         exit(1);
@@ -194,22 +201,24 @@ int main(int argc, char *argv[]) {
     }
 
     // Deal with opponent
-    if (FD_ISSET(peerfd_udp, &readfds)) {                               // Receive movement from opponent
+    if (FD_ISSET(selffd_udp, &readfds)) {                               // Receive movement from opponent
       if (state == GameState::PLAYING) {
-        int message_size = read(peerfd_udp, buffer, MAX_BYTES);
+        int message_size = read(selffd_udp, buffer, MAX_BYTES);
         buffer[message_size] = 0;
+        printf("OPPONENT SENT MOVE [%s]\n", buffer);
 
         // Get opponent move
         pair<int,int> position = getRowColFromCString(buffer, message_size);
         printf("[OPPONENT MOVE]: %d %d\n", position.first, position.second);
         game->make_move(opponent_player, position);
-
+        game->print_board();
         if (!(game->game_over())) {
           // Get player move
           printf("[YOUR MOVE]: ");
           int row, col;
           scanf("%d %d", &row, &col);
           game->make_move(self_player, make_pair(row, col));
+          connect(peerfd_udp, (sockaddr *) &peeraddr_udp, sizeof(peeraddr_udp));
           writeSocket(request_builder->sendMovement(row, col), peerfd_udp);
         } 
         // Game over
@@ -237,6 +246,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
+    string buffer_str;
     // Deal with server: reads server responses
     int message_size;
     if (FD_ISSET(server_sockfd_tcp, &readfds)) {
@@ -248,38 +258,83 @@ int main(int argc, char *argv[]) {
       buffer[message_size] = 0;
       switch (state) {
         case GameState::WAITING_PLAYERS_LIST:                           // Server sent the available players list
-          printf("\n[---AVAILABLE OPPONENTS LIST---]\n");
-          printf("%s", buffer);
-          printf("[TYPE OPPONENT NAME]: ");
-          char opponentName[50];
-          scanf("%s", opponentName);
-          opponent_id = string(opponentName);
-          writeSocket(opponent_id, server_sockfd_tcp);                 // Send the invitation
-          state = GameState::WAITING_ACCEPT;
+          buffer_str = string(buffer);
+          if (buffer_str.size() == 0) {
+            printf("[NO OPPONENT AVAILABLE AT THE MOMENT]\n");
+            printf("[Retrying in 5 seconds ...]\n");
+            sleep(5);
+            state = GameState::PENDING_LOGIN;
+          } else {
+            printf("\n[---AVAILABLE OPPONENTS LIST---]\n");
+            printf("%s", buffer);
+            printf("[TYPE OPPONENT NAME, or press x then enter to skip]: ");
+            char opponentName[50];
+            scanf("%s", opponentName);
+            if (string(opponentName) != "x") {
+              opponent_id = string(opponentName);
+              printf("you choose: %s\n", opponentName);
+              writeSocket(request_builder->invite(opponentName, tcp_listen_port), server_sockfd_tcp);                 // Send the invitation
+            }
+            state = GameState::WAITING_ACCEPT;
+          }
           break;
 
         case GameState::WAITING_ACCEPT:                                 // If the opponent has accepted the invitation
           tokens = parseRequest(string(buffer));
+          // printf("DEBUG: [%s] [%s] [%s]\n", tokens.at(0).c_str(), tokens.at(1).c_str(), tokens.at(2).c_str());
+          printf("DEBUG [%s]\n", buffer);
           if (tokens.at(1) == "yes") {
+            printf("[CHALLENGE WAS ACCEPTED BY OPPONENT]\n");
+            printf("[PLAYER PIECE: X]\n");
             state = GameState::PLAYING;
             opponent_player = new Player(opponent_id, 'X');
             opponent_addr = tokens.at(2);
             opponent_port = atoi(tokens.at(3).c_str());
+            
+            // Peer will be the server 
+            peeraddr_udp.sin_port = opponent_port;
+            //Bind(peerfd_udp, (struct sockaddr *)&peeraddr_udp);
+            // sendto(peeraddr_udp, (const char *), strlen(hello), 
+            //     MSG_CONFIRM, (const struct sockaddr *) &servaddr,  
+            //         sizeof(servaddr));
+
             game = new Game(self_player, opponent_player);
-          } else if (message == "no") {                                 // If the opponent has denied the invitation
-            writeSocket(request_builder->login(), tcp_listen_port);
+            state = GameState::PLAYING;
+          } else if (tokens.at(1) == "no") {                                 // If the opponent has denied the invitation
+            printf("[CHALLENGE WAS DENIED BY OPPONENT]\n");
+            writeSocket(request_builder->login(udp_listen_port), tcp_listen_port);
             state = GameState::WAITING_PLAYERS_LIST;
           } else {                                                      // The opponent has made and invitation
-            printf("Opponent [%s] has made an invitation. Accept ? (y/n)\n", opponent_id.c_str());
             opponent_id = tokens.at(1);
+            printf("Opponent [%s] has made an invitation. Accept? (y/n)\n", opponent_id.c_str());
             char ans;
-            scanf("%c", &ans);
+            scanf("\n%c", &ans);
+            printf("DEBUG ans[%c]\n", ans);
             if (ans == 'y') {
-              printf("You accepted the invitation, your symbol is: 'O'\n");
+              printf("You accepted the invitation, your symbol is: 'O'\n"); fflush(stdout);
               writeSocket(request_builder->accept(opponent_id), server_sockfd_tcp);
+              opponent_addr = tokens.at(2);
+              opponent_port = atoi(tokens.at(3).c_str());
               opponent_player = new Player(opponent_id, 'X');
+              self_player = new Player(self_player_id, 'O');
+              self_player->id = self_player_id;
               self_player->symbol = 'O';
+              opponent_player->symbol = 'X';
+              opponent_player->id = opponent_id;
               game = new Game(self_player, opponent_player);
+
+              // Get player move
+              printf("[YOUR MOVE]: ");fflush(stdout);
+              int row = 0, col = 0;
+              //game->print_board();
+              scanf("%d %d", &row, &col);
+              game->make_move(self_player, make_pair(row, col));
+              game->print_board();
+              peeraddr_udp.sin_port = htons(opponent_port);
+              //Bind(peerfd_udp, (struct sockaddr *)&peeraddr_udp);
+              connect(peerfd_udp, (sockaddr *) &peeraddr_udp, sizeof(peeraddr_udp));
+              writeSocket(request_builder->sendMovement(row, col), peerfd_udp);
+              state = GameState::PLAYING;
             } else {
               writeSocket(request_builder->deny(opponent_id), server_sockfd_tcp);
             }
