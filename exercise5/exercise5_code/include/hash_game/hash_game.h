@@ -137,8 +137,8 @@ class Game {
       }
 
       // Rows
-      for(row = BOARD_START; row < BOARD_END; row++){
-        for (col = BOARD_START; col <= BOARD_END; col++) {
+      for(row = BOARD_START; row <= BOARD_END; row++){
+        for (col = BOARD_START; col < BOARD_END; col++) {
           hash = hash && (board[row][col] == board[row][col+1]); 
         }
         if (hash && !position_empty(row, col)) {

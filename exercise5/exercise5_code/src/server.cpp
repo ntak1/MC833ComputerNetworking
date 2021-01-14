@@ -29,7 +29,7 @@ inline bool is_valid_descriptor(int fd) {
   return fd > 0;
 }
 
-vector<string> parseRequest(string request) {
+vector<string> parse_response(string request) {
   char sep = ' ';
   int init = 0;
   vector<string> ans;
@@ -46,7 +46,7 @@ vector<string> parseRequest(string request) {
 }
 
 // Receives a message and a socket descriptor and send the message to the corresponding socket
-int writeSocket(string message, int socketfd) {
+int write_socket(string message, int socketfd) {
   char buffer[MAX_BYTES];
   snprintf(buffer, message.size() + 1, "%s", message.c_str());
   return write(socketfd, buffer, MAX_BYTES);
@@ -208,7 +208,7 @@ int main(int argc, char **argv) {
         else {
           buffer[message_size + 1] = 0;
           string message = string(buffer);
-          vector<string> tokens = parseRequest(message);
+          vector<string> tokens = parse_response(message);
 
           // Sends to the client its opponent player address if some is available
           string newPlayerId, inviter, invited, buffer_str;
@@ -217,9 +217,9 @@ int main(int argc, char **argv) {
           if(tokens.at(0) == "login:") {
             printf("[LOGIN] user %s requested list of available players.\n", tokens.at(1).c_str());
             if(allPlayers.getAvailablePlayersIds().size() == 1 && allPlayers.getAvailablePlayersIds()[0] == tokens.at(1)) {
-              writeSocket("", socket_descriptor);
+              write_socket("", socket_descriptor);
             } else {
-              writeSocket(requestBuilder.scoreTableBuilder(allPlayers, tokens.at(1)), socket_descriptor);
+              write_socket(requestBuilder.scoreTableBuilder(allPlayers, tokens.at(1)), socket_descriptor);
             }
 
             newPlayerId = tokens.at(1);
@@ -237,7 +237,7 @@ int main(int argc, char **argv) {
             printf("[INVITE] [%s] [%s]\n", inviter.c_str(), invited.c_str());
             int invited_player_socket = getSocketFromPlayerId(playerIdFromSocket, invited);
             if (invited_player_socket != -1) {
-              writeSocket(requestBuilder.invite(inviter, address, atoi(tokens.at(3).c_str())), invited_player_socket);
+              write_socket(requestBuilder.invite(inviter, address, atoi(tokens.at(3).c_str())), invited_player_socket);
             } else {
               printf("Error: could not find socket descriptor!\n");
               for (auto temp: playerIdFromSocket) {
@@ -251,14 +251,17 @@ int main(int argc, char **argv) {
             string inviter = tokens.at(2);
             int inviter_socket = getSocketFromPlayerId(playerIdFromSocket, inviter);
             Player invitedPlayer = allPlayers.getPlayers()[invited];
-            writeSocket(requestBuilder.accept(invitedPlayer.address, invitedPlayer.port, true), inviter_socket);
+            write_socket(requestBuilder.accept(invitedPlayer.address, invitedPlayer.port, true), inviter_socket);
+            // Mark both players as unavailable
+            allPlayers.setPlayerAvailable(invited, false);
+            allPlayers.setPlayerAvailable(inviter, false);
           }
           else if (tokens.at(0) == "deny:") {
             string invited = tokens.at(1);
             string inviter = tokens.at(2);
             int inviter_socket = getSocketFromPlayerId(playerIdFromSocket, inviter);
             Player invitedPlayer = allPlayers.getPlayers()[invited];
-            writeSocket(requestBuilder.accept(invitedPlayer.address, invitedPlayer.port, false), inviter_socket); 
+            write_socket(requestBuilder.accept(invitedPlayer.address, invitedPlayer.port, false), inviter_socket); 
           }
           else if (tokens.at(0) == "uploadResult:") {
             string player_id = tokens.at(1); 
@@ -273,7 +276,7 @@ int main(int argc, char **argv) {
             }
           }
           else if (tokens.at(0) == "requestScore:") {
-            writeSocket(requestBuilder.scoreTableBuilder(allPlayers, tokens.at(1)), socket_descriptor);
+            write_socket(requestBuilder.scoreTableBuilder(allPlayers, tokens.at(1)), socket_descriptor);
           } else {
             printf("Server received an invalid request!\n[%s]", buffer);
           }
