@@ -177,7 +177,6 @@ int main(int argc, char *argv[]) {
         printf("Server disconnected! Loging out ...\n");
         exit(1);
       }
-      game = new Game();
       state = GameState::WAITING_PLAYERS_LIST;
       printf("[LOGIN DONE!]\n");
     }
@@ -203,12 +202,9 @@ int main(int argc, char *argv[]) {
           // make move locally
           game->make_move(self_player, make_pair(row, col));
           game->print_board();
-          // send move to the opponent
-          if (connect(peerfd_udp, (sockaddr *) &peeraddr_udp, sizeof(peeraddr_udp)) < 0) {
-                printf("ERROR UPD\n");
-          }
           write_socket(request_builder->sendMovement(row, col), peerfd_udp);
           state = GameState::PLAYING;
+          printf("END MOVE\n");
         } 
         // Game over
         else {
@@ -297,7 +293,7 @@ int main(int argc, char *argv[]) {
             peeraddr_udp.sin_port = htons(opponent_port);
             connect(peerfd_udp, (sockaddr *) &peeraddr_udp, sizeof(peeraddr_udp));
 
-            game = new Game(self_player, opponent_player);
+            game = new Game(opponent_player, self_player);
             state = GameState::PLAYING;
           }
           // If the opponent has denied the invitation

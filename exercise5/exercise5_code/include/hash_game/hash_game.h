@@ -30,7 +30,7 @@ enum GameState {
 
 class Game {
   private:
-    int board[4][4];
+    vector<vector<int> > board;
     int turn;
     Player *player1;
     Player *player2;
@@ -54,15 +54,17 @@ class Game {
       this->BOARD_END = 3;
       this->current_player = NULL;
       this->winner = NULL;
-      fill(*board, *board + 16, ' ');
+      vector<vector<int> > matrix(4, vector<int>(4));
+      this->board = matrix;
     }
     Game(Player *player1, Player *player2) {
       this->turn = 0;
       this->BOARD_START = 1;
       this->BOARD_END = 3;
-      this->current_player = NULL;
+      this->current_player = player1;
       this->winner = NULL;
-      fill(*board, *board + 16, ' ');;
+      vector<vector<int> > matrix(4, vector<int>(4, ' '));
+      this->board = matrix;
       this->player1 = player1;
       this->player2 = player2;
     }
@@ -91,7 +93,7 @@ class Game {
       for (int row = BOARD_START; row <= BOARD_END; row++) {
         for (int col = BOARD_START; col <= BOARD_END; col++) {
           if(col == BOARD_START) {
-            printf(" %c |%2c ", row,  board[row][col]);
+            printf(" %2d |%2c ", row,  board[row][col]);
           } else{
             printf("|%2c ", board[row][col]);
           }
